@@ -36,6 +36,8 @@ namespace SpaceDefence
         
         private void Game_Exiting(object sender, System.EventArgs e)
         {
+            // !
+            Console.WriteLine("Ship amount: " + _gameManager.GetGameObjects().Count(x => x is Ship));
             if (_fpsHistory.Count > 0)
             {
                 float avgFps = _fpsHistory.Average();
@@ -43,7 +45,7 @@ namespace SpaceDefence
                 float maxFps = _fpsHistory.Max();
 
                 System.Console.WriteLine("--- FPS Stats ---");
-                System.Console.WriteLine($"Mid: {avgFps:F2}");
+                System.Console.WriteLine($"Average: {avgFps:F2}");
                 System.Console.WriteLine($"Low: {minFps:F2}");
                 System.Console.WriteLine($"High: {maxFps:F2}");
             }
@@ -87,9 +89,9 @@ namespace SpaceDefence
                     _gameManager.AddGameObject(player2);
                 }
             }
-
             // Add the starting objects to the GameManager
             _gameManager.Initialize(Content, this);
+            
         }
 
         protected override void LoadContent()

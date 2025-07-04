@@ -67,7 +67,7 @@ namespace SpaceDefence
                     data.particleCount = 40;
                     data.maxScale = .6f;
                     data.minScale = .2f;
-                    new ParticleEmitter(GetPosition().Center.ToVector2(), data).Emit();
+                    GameManager.GetGameManager().ParticlePool.SpawnParticle(GetPosition().Center.ToVector2(), data);
                 }
             }
         }

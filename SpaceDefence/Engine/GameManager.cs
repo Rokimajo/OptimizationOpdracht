@@ -15,6 +15,7 @@ namespace SpaceDefence
         private List<GameObject> _toBeAdded;
         private ContentManager _content;
         private Effect _teamColorEffect;
+        internal readonly ParticlePool ParticlePool = new ParticlePool();
         public Matrix WorldMatrix { get; set; }
 
         public Random RNG { get; private set; }
@@ -89,6 +90,7 @@ namespace SpaceDefence
 
 
             // Update
+            ParticlePool.Update(gameTime);
             foreach (GameObject gameObject in _gameObjects)
             {
                 gameObject.Update(gameTime);
@@ -115,6 +117,7 @@ namespace SpaceDefence
         public void Draw(GameTime gameTime, SpriteBatch spriteBatch) 
         {
             spriteBatch.Begin(transformMatrix: WorldMatrix,effect: _teamColorEffect);
+            ParticlePool.Draw(gameTime, spriteBatch);
             foreach (GameObject gameObject in _gameObjects)
             {
                 gameObject.Draw(gameTime, spriteBatch);
