@@ -56,7 +56,7 @@ namespace SpaceDefence
         {
             base.OnCollision(other);
             
-            if (other is Bullet && (other.CollisionType & CollisionType) == 0)
+            if (other is Bullet bullet && (other.CollisionType & CollisionType) == 0 && bullet.Active)
             {
                 health -= 1;
                 if (health < 0)
@@ -99,7 +99,8 @@ namespace SpaceDefence
             cooldown = 0.5f;
             Vector2 aimDirection = LinePieceCollider.GetDirection(GetPosition().Center, target);
             Vector2 turretExit = _rectangleCollider.shape.Center.ToVector2() + aimDirection * base_turret.Height / 2f;
-            GameManager.GetGameManager().AddGameObject(new Bullet(turretExit, aimDirection, 150, CollisionType));
+            var _gm = GameManager.GetGameManager();
+            _gm.BulletPool.ShootBullet(turretExit, aimDirection, 150, CollisionType);
 
             return (-aimDirection * 20).ToPoint();
         }
