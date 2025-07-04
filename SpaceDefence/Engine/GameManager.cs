@@ -16,6 +16,9 @@ namespace SpaceDefence
         private ContentManager _content;
         private Effect _teamColorEffect;
         internal readonly ParticlePool ParticlePool = new ParticlePool();
+        internal readonly BulletPool BulletPool = new BulletPool();
+        private SpatialGrid _spatialGrid;
+        
         public Matrix WorldMatrix { get; set; }
 
         public Random RNG { get; private set; }
@@ -45,6 +48,11 @@ namespace SpaceDefence
         {
             Game = game;
             _content = content;
+            
+            var worldBounds = new Rectangle(0, 0, 
+                (int)(game.GraphicsDevice.Viewport.Width / .3f), // .3f hardcoded because of above scale used
+                (int)(game.GraphicsDevice.Viewport.Height / .3f));
+            _spatialGrid = new SpatialGrid(worldBounds);
         }
 
         public void Load(ContentManager content)
@@ -66,19 +74,52 @@ namespace SpaceDefence
 
         public void CheckCollision()
         {
-            // Checks once for every pair of 2 GameObjects if the collide.
-            for (int i = 0; i < _gameObjects.Count; i++)
+            _spatialGrid.Clear();
+            
+            foreach (var obj in _gameObjects)
             {
-                for (int j = i+1; j < _gameObjects.Count; j++)
+                if (obj is Bullet bullet && !bullet.Active)
+                    continue;
+
+                _spatialGrid.Insert(obj);
+            }
+            
+            var checkedPairs = new HashSet<(GameObject, GameObject)>();
+            foreach (var obj in _gameObjects)
+            {
+                if (obj is Bullet bullet && !bullet.Active)
+                    continue;
+
+                var nearbyObjects = _spatialGrid.GetNearbyObjects(obj);
+                foreach (var other in nearbyObjects)
                 {
-                    if (_gameObjects[i].CheckCollision(_gameObjects[j]))
+                    var pair1 = (obj, other);
+                    var pair2 = (other, obj);
+                    if (checkedPairs.Contains(pair1) || checkedPairs.Contains(pair2))
+                        continue;
+
+                    checkedPairs.Add(pair1);
+                    if (!ShouldCheckCollision(obj, other))
+                        continue;
+
+                    if (obj.CheckCollision(other))
                     {
-                        _gameObjects[i].OnCollision(_gameObjects[j]);
-                        _gameObjects[j].OnCollision(_gameObjects[i]);
+                        obj.OnCollision(other);
+                        other.OnCollision(obj);
                     }
                 }
             }
+        }
+
+        private bool ShouldCheckCollision(GameObject obj1, GameObject obj2)
+        {
+            var type1 = obj1.CollisionType;
+            var type2 = obj2.CollisionType;
+            if ((type1 & CollisionType.Team1) != 0 && (type2 & CollisionType.Team2) != 0) return true;
+            if ((type1 & CollisionType.Team2) != 0 && (type2 & CollisionType.Team1) != 0) return true;
+            if ((type1 & CollisionType.Solid) != 0 || (type2 & CollisionType.Solid) != 0) return true;
             
+            return false;
         }
         
         public void Update(GameTime gameTime) 
