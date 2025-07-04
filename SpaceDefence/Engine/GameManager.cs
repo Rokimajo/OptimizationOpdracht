@@ -38,6 +38,8 @@ namespace SpaceDefence
             //WorldMatrix = Matrix.CreateScale(1f) * Matrix.CreateTranslation(0, -800, 0);
         }
 
+        public int GetObjCount() => _gameObjects.Count;
+
         public void Initialize(ContentManager content, Game game)
         {
             Game = game;
