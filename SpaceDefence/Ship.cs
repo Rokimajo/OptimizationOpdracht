@@ -20,6 +20,10 @@ namespace SpaceDefence
         private RectangleCollider _rectangleCollider;
         private Point target;
         private Color teamColor;
+        
+        private Ship _cachedNearestEnemy;
+        private float _enemySearchCooldown;
+        private const float _enemySearchInterval = 0.2f;
 
         /// <summary>
         /// The player character
@@ -31,6 +35,7 @@ namespace SpaceDefence
             SetCollider(_rectangleCollider);
             CollisionType = collisionType | CollisionType.Solid;
             this.teamColor = teamColor;
+            _enemySearchCooldown = 0f;
         }
 
         public override void Load(ContentManager content)
@@ -55,7 +60,6 @@ namespace SpaceDefence
         public override void OnCollision(GameObject other)
         {
             base.OnCollision(other);
-            
             if (other is Bullet bullet && (other.CollisionType & CollisionType) == 0 && bullet.Active)
             {
                 health -= 1;
@@ -71,14 +75,24 @@ namespace SpaceDefence
                 }
             }
         }
+        
+        private void UpdateNearestEnemy()
+        {
+            if (_enemySearchCooldown <= 0f)
+            {
+                _cachedNearestEnemy = FindNearestEnemy();
+                _enemySearchCooldown = _enemySearchInterval;
+            }
+        }
 
         
         public override void Update(GameTime gameTime)
         {
             base.Update(gameTime);
             cooldown -= (float)gameTime.ElapsedGameTime.TotalSeconds;
-            Ship nearest = FindNearestEnemy();
-            target = nearest == null ? Point.Zero : nearest.GetPosition().Center;
+            _enemySearchCooldown -= (float)gameTime.ElapsedGameTime.TotalSeconds;
+            UpdateNearestEnemy();
+            target = _cachedNearestEnemy == null ? Point.Zero : _cachedNearestEnemy.GetPosition().Center;
 
             if( (target -GetPosition().Center).ToVector2().Length() < Range)
             {
