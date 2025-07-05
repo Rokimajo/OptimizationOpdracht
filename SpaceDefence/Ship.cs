@@ -30,6 +30,12 @@ namespace SpaceDefence
         private float _obstacleSearchCooldown;
         private const float _obstacleSearchInterval = 0.1f;
 
+        private float aimAngle;
+        private Vector2 lastPosition;
+        private Point lastTarget;
+        private float _aimAngleCooldown;
+        private const float _aimAngleInterval = 0.05f;
+
         /// <summary>
         /// The player character
         /// </summary>
@@ -40,8 +46,12 @@ namespace SpaceDefence
             SetCollider(_rectangleCollider);
             CollisionType = collisionType | CollisionType.Solid;
             this.teamColor = teamColor;
+            
             _enemySearchCooldown = 0f;
             _obstacleSearchCooldown = 0f;
+            _aimAngleCooldown = 0f;
+            lastPosition = Vector2.Zero;
+            lastTarget = Point.Zero;
         }
 
         public override void Load(ContentManager content)
@@ -114,6 +124,19 @@ namespace SpaceDefence
                 _obstacleSearchCooldown = _obstacleSearchInterval;
             }
         }
+
+        private void UpdateAimAngle()
+        {
+            if (_aimAngleCooldown <= 0f)
+            {
+                var curPos = GetPosition().Center.ToVector2();
+                if (lastPosition != curPos || target != lastTarget)
+                    aimAngle = LinePieceCollider.GetAngle(LinePieceCollider.GetDirection(GetPosition().Center, target));
+                lastPosition = curPos;
+                lastTarget = target;
+                _aimAngleCooldown = _aimAngleInterval;
+            }
+        }
         
         public override void Update(GameTime gameTime)
         {
@@ -121,9 +144,11 @@ namespace SpaceDefence
             cooldown -= (float)gameTime.ElapsedGameTime.TotalSeconds;
             _enemySearchCooldown -= (float)gameTime.ElapsedGameTime.TotalSeconds;
             _obstacleSearchCooldown -= (float)gameTime.ElapsedGameTime.TotalSeconds;
+            _aimAngleCooldown -= (float)gameTime.ElapsedGameTime.TotalSeconds;
             
             UpdateNearestEnemy();
             UpdateCachedObstacles();
+            UpdateAimAngle();
             
             target = _cachedNearestEnemy == null ? Point.Zero : _cachedNearestEnemy.GetPosition().Center;
 
@@ -199,7 +224,6 @@ namespace SpaceDefence
         public override void Draw(GameTime gameTime, SpriteBatch spriteBatch)
         {
             spriteBatch.Draw(ship_body, _rectangleCollider.shape, teamColor);
-            float aimAngle = LinePieceCollider.GetAngle(LinePieceCollider.GetDirection(GetPosition().Center, target));
             Rectangle turretLocation = base_turret.Bounds;
             turretLocation.Location = _rectangleCollider.shape.Center;
             spriteBatch.Draw(base_turret, turretLocation, null, teamColor, aimAngle, turretLocation.Size.ToVector2() / 2f, SpriteEffects.None, 0);
