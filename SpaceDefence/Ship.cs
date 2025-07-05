@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using SpaceDefence.Collision;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -24,6 +25,10 @@ namespace SpaceDefence
         private Ship _cachedNearestEnemy;
         private float _enemySearchCooldown;
         private const float _enemySearchInterval = 0.2f;
+        
+        private List<GameObject> _cachedObstacles = new List<GameObject>();
+        private float _obstacleSearchCooldown;
+        private const float _obstacleSearchInterval = 0.1f;
 
         /// <summary>
         /// The player character
@@ -36,6 +41,7 @@ namespace SpaceDefence
             CollisionType = collisionType | CollisionType.Solid;
             this.teamColor = teamColor;
             _enemySearchCooldown = 0f;
+            _obstacleSearchCooldown = 0f;
         }
 
         public override void Load(ContentManager content)
@@ -84,14 +90,41 @@ namespace SpaceDefence
                 _enemySearchCooldown = _enemySearchInterval;
             }
         }
-
+        
+        private void UpdateCachedObstacles()
+        {
+            if (_obstacleSearchCooldown <= 0f)
+            {
+                _cachedObstacles.Clear();
+        
+                foreach(GameObject other in GameManager.GetGameManager().GetGameObjects())
+                {
+                    if(other == this || !other.CollisionType.HasFlag(CollisionType.Solid))
+                        continue;
+                    
+                    Vector2 difference = (GetPosition().Center - other.GetPosition().Center).ToVector2();
+                    float distance = difference.Length();
+                    
+                    if(distance < AvoidanceRange * 1.5f)
+                    {
+                        _cachedObstacles.Add(other);
+                    }
+                }
+        
+                _obstacleSearchCooldown = _obstacleSearchInterval;
+            }
+        }
         
         public override void Update(GameTime gameTime)
         {
             base.Update(gameTime);
             cooldown -= (float)gameTime.ElapsedGameTime.TotalSeconds;
             _enemySearchCooldown -= (float)gameTime.ElapsedGameTime.TotalSeconds;
+            _obstacleSearchCooldown -= (float)gameTime.ElapsedGameTime.TotalSeconds;
+            
             UpdateNearestEnemy();
+            UpdateCachedObstacles();
+            
             target = _cachedNearestEnemy == null ? Point.Zero : _cachedNearestEnemy.GetPosition().Center;
 
             if( (target -GetPosition().Center).ToVector2().Length() < Range)
@@ -122,13 +155,13 @@ namespace SpaceDefence
         public Vector2 AvoidObstacles()
         {
             Vector2 avoidance = Vector2.Zero;
-            foreach(GameObject other in GameManager.GetGameManager().GetGameObjects())
+            foreach(GameObject other in _cachedObstacles)
             {
                 if(other == this || !other.CollisionType.HasFlag(CollisionType.Solid))
                     continue;
                 Vector2 difference = (GetPosition().Center - other.GetPosition().Center).ToVector2();
                 float distance = difference.Length();
-                if(distance < AvoidanceRange)
+                if(distance < AvoidanceRange && distance > 0)
                 {
                     avoidance += (float)Math.Sqrt(AvoidanceRange)*speed * Vector2.Normalize(difference)/(float)Math.Sqrt(distance);
                 }
