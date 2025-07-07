@@ -16,10 +16,6 @@ namespace SpaceDefence
         private GraphicsDeviceManager _graphics;
         private GameManager _gameManager;
         
-        private List<float> _fpsHistory = new List<float>();
-        private List<float> _frameTimeHistory = new List<float>();
-        private List<int> _entityCountHistory = new List<int>();
-
         public SpaceDefence()
         {
             _graphics = new GraphicsDeviceManager(this);
@@ -31,43 +27,6 @@ namespace SpaceDefence
             
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
-            Exiting += Game_Exiting;
-        }
-        
-        private void Game_Exiting(object sender, System.EventArgs e)
-        {
-            // !
-            Console.WriteLine("Ship amount: " + _gameManager.GetGameObjects().Count(x => x is Ship));
-            if (_fpsHistory.Count > 0)
-            {
-                float avgFps = _fpsHistory.Average();
-                float minFps = _fpsHistory.Min();
-                float maxFps = _fpsHistory.Max();
-
-                System.Console.WriteLine("--- FPS Stats ---");
-                System.Console.WriteLine($"Average: {avgFps:F2}");
-                System.Console.WriteLine($"Low: {minFps:F2}");
-                System.Console.WriteLine($"High: {maxFps:F2}");
-            }
-
-            if (_frameTimeHistory.Count > 0)
-            {
-                float avgFrameTime = _frameTimeHistory.Average();
-                float minFrameTime = _frameTimeHistory.Min();
-                float maxFrameTime = _frameTimeHistory.Max();
-
-                System.Console.WriteLine("--- Frametime (ms) Stats ---");
-                System.Console.WriteLine($"Mid: {avgFrameTime:F2}");
-                System.Console.WriteLine($"Low: {minFrameTime:F2}");
-                System.Console.WriteLine($"High: {maxFrameTime:F2}");
-            }
-
-            if (_entityCountHistory.Count > 0)
-            {
-                int totalEntities = _entityCountHistory.Max();
-                System.Console.WriteLine("--- Entity Stats ---");
-                System.Console.WriteLine($"Total amount of entities: {totalEntities}");
-            }
         }
 
         protected override void Initialize()
@@ -112,16 +71,6 @@ namespace SpaceDefence
         {
             GraphicsDevice.Clear(Color.Black);
             _gameManager.Draw(gameTime, _spriteBatch);
-
-            float frameTime = (float)gameTime.ElapsedGameTime.TotalMilliseconds;
-            _frameTimeHistory.Add(frameTime);
-
-            float fps = 1.0f / (float)gameTime.ElapsedGameTime.TotalSeconds;
-            _fpsHistory.Add(fps);
-
-            int entityCount = _gameManager.GetObjCount();
-            _entityCountHistory.Add(entityCount);
-    
             base.Draw(gameTime);
         }
 
